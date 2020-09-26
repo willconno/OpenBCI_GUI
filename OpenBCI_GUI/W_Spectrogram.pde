@@ -25,7 +25,7 @@ class W_Spectrogram extends Widget {
     int prevH = 0;
     float scaledWidth;
     float scaledHeight;
-    int graphX = 0;
+    int graphX = 0
     int graphY = 0;
     int graphW = 0;
     int graphH = 0;
