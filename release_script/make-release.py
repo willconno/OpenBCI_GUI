@@ -40,11 +40,11 @@ data_dir_names = {
     MAC : os.path.join("OpenBCI_GUI.app", "Contents", "Java", "data")
 }
 
-def custom_check_call(args):
+def custom_check_call(args, timeout = 1000):
     print('Running %s' % str(args))
     process = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
     try:
-        outs, errs = process.communicate(timeout = 1800)
+        outs, errs = process.communicate(timeout = timeout)
     except subprocess.TimeoutExpired:
         process.kill()
         outs, errs = process.communicate()
@@ -195,7 +195,10 @@ def build_app(sketch_dir, flavor):
     # so we can't reliably check for success or failure
     # https://github.com/processing/processing/issues/5468
     print ("Using sketch: " + sketch_dir)
-    custom_check_call(["processing-java", "--sketch=" + sketch_dir, "--output=" +  os.path.join(os.getcwd(), flavor), "--export"])
+    try:
+        custom_check_call(["processing-java", "--sketch=" + sketch_dir, "--output=" +  os.path.join(os.getcwd(), flavor), "--export"], 300)
+    except BaseException as err:
+        print (err)  
 
 ### Function: Package the app in the expected file structure
 ###########################################################
