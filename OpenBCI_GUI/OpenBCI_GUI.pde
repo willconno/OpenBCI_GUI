@@ -125,6 +125,8 @@ DataSource currentBoard = new BoardNull();
 
 DataLogger dataLogger = new DataLogger();
 
+APIClient apiClient = new APIClient();
+
 // Intialize interface protocols
 InterfaceSerial iSerial = new InterfaceSerial(); //This is messy, half-deprecated code. See comments in InterfaceSerial.pde - Nov. 2020
 String openBCI_portName = "N/A";  //starts as N/A but is selected from control panel to match your OpenBCI USB Dongle's serial/COM
@@ -575,6 +577,7 @@ void initSystem() {
     updateToNChan(currentBoard.getNumEXGChannels());
 
     dataLogger.initialize();
+    apiClient.initialize(ourApplet);
 
     verbosePrint("OpenBCI_GUI: initSystem: Initializing core data objects");
     initCoreDataObjects();
@@ -685,6 +688,7 @@ void startRunning() {
     if (currentBoard.isStreaming()) {
         output("Data stream started.");
         dataLogger.onStartStreaming();
+        apiClient.onStartStreaming();
         // todo: this should really be some sort of signal that listeners can register for "OnStreamStarted"
         // close hardware settings if user starts streaming
         w_timeSeries.closeADSSettings();
@@ -712,6 +716,7 @@ void stopRunning() {
                 streamTimeElapsed.stop();
                 sessionTimeElapsed.suspend();
                 dataLogger.onStopStreaming();
+                apiClient.onStopStreaming();
             } catch (IllegalStateException e) {
                 e.printStackTrace();
                 outputError("GUI Error: Failed to stop Timer. Please make an issue on GitHub in the GUI repo.");
@@ -765,6 +770,7 @@ void haltSystem() {
         recentPlaybackFilesHaveUpdated = false;
 
         dataLogger.uninitialize();
+        apiClient.uninitialize();
 
         currentBoard.uninitialize();
         currentBoard = new BoardNull(); // back to null
@@ -784,6 +790,7 @@ void systemUpdate() { // for updating data values and variables
     currentBoard.update();
 
     dataLogger.update();
+    apiClient.update();
 
     helpWidget.update();
     topNav.update();
