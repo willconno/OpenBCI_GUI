@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 
 public class APIClient {
 
+    Gson gson = new Gson();
     WebsocketServer ws;
 
     APIClient() {
@@ -13,10 +14,9 @@ public class APIClient {
         ws = null;
     }
 
-    public void sendMessage(BrainSignal signal) {
+    public void sendMessage(BrainSignalRawData signal) {
         if (signal == null || ws == null) return;
 
-        Gson gson = new Gson();
 
         ws.sendMessage(gson.toJson(signal));
     }
@@ -29,8 +29,45 @@ public class APIClient {
         this.disconnect();
     }
 
+    int numSeconds = 5;
+    int nPoints;
+
+    private int nPointsBasedOnDataSource() {
+        return numSeconds * currentBoard.getSampleRate();
+    }
+
     public void update() {
-        saveNewData();
+        // saveNewData();
+
+        if (dataProcessing == null) return;
+
+        //Reusable variables
+        String fmt; float val;
+
+        //update the voltage values
+        // val = dataProcessing.data_std_uV[channelIndex];
+        nPoints = nPointsBasedOnDataSource();
+        ArrayList<Float> data = new ArrayList<Float>();
+
+        for(int channelIndex = 0; channelIndex < 8; channelIndex++) {
+            // float value = dataProcessing.data_std_uV[i];
+
+            if (dataProcessingFilteredBuffer[channelIndex].length >= nPoints) {
+                for (int i = dataProcessingFilteredBuffer[channelIndex].length - nPoints; i < dataProcessingFilteredBuffer[channelIndex].length; i++) {
+                    // float time = -(float)numSeconds + (float)(i-(dataProcessingFilteredBuffer[channelIndex].length-nPoints))*timeBetweenPoints;
+                    float filt_uV_value = dataProcessingFilteredBuffer[channelIndex][i];
+
+                    data.add(filt_uV_value);
+                }
+            }
+        }
+
+        TimeSeriesRequest request = new TimeSeriesRequest(data);
+        request.numPoints = nPoints;
+
+        ws.sendMessage(gson.toJson(request));
+
+
     }
 
     
@@ -39,7 +76,7 @@ public class APIClient {
 
         if (newData == null || ws == null) return;
 
-        BrainSignal signal = new BrainSignal(newData);
+        BrainSignalRawData signal = new BrainSignalRawData(newData);
 
         sendMessage(signal);
     }
@@ -53,7 +90,7 @@ public class APIClient {
     }
 }
 
-public class BrainSignal {
+public class BrainSignalRawData {
 
     double[] channel1;
     double[] channel2;
@@ -64,7 +101,7 @@ public class BrainSignal {
     double[] channel7;
     double[] channel8;
 
-    BrainSignal(double[][] values) {
+    BrainSignalRawData(double[][] values) {
         for (int i = 0; i < values.length; i++) {
             switch (i) {
                 case 0:
@@ -97,6 +134,62 @@ public class BrainSignal {
                 case 7:
 
                     this.channel8 = values[i];
+                    break;
+            
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+public class TimeSeriesRequest {
+
+    float channel1;
+    float channel2;
+    float channel3;
+    float channel4;
+    float channel5;
+    float channel6;
+    float channel7;
+    float channel8;
+    ArrayList<Float> values;
+    public int numPoints;
+
+    TimeSeriesRequest(ArrayList<Float> values) {
+        this.values = values;
+        for (int i = 0; i < values.size(); i++) {
+            switch (i) {
+                case 0:
+                    this.channel1 = values.get(i);
+                    break;
+
+                case 1:
+                    this.channel2 = values.get(i);  
+                    break;
+
+                case 2:
+                    this.channel3 = values.get(i);
+                    break;
+
+                case 3:
+                    this.channel4 = values.get(i);  
+                    break;
+
+                case 4:
+                    this.channel5 = values.get(i);
+                    break;
+
+                case 5:
+                    this.channel6 = values.get(i);
+                    break;
+
+                case 6:
+                    this.channel7 = values.get(i);  
+                    break;
+                case 7:
+
+                    this.channel8 = values.get(i);
                     break;
             
                 default:
